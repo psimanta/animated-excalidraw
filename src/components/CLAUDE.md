@@ -1,10 +1,11 @@
 # src/components — screens
 
 One file per screen; all are controlled components. `App.tsx` owns `scene`,
-`units`, `order`, `durations`, plus `theme` (chrome light/dark) and
+`units`, `order`, `durations`, plus `theme` (chrome light/dark),
 `darkCanvas` (drawing rendered with Excalidraw's dark filter — independent
-of chrome theme) — screens receive them plus callbacks and keep only
-transient UI state (selection, drag state, autoplay progress). `order` is an
+of chrome theme), and `spotlight` (dim earlier steps to 30%) — screens
+receive them plus callbacks and keep only transient UI state (selection,
+drag state, autoplay progress). `order` is an
 array of unit ids; `durations` is keyed by unit id, with `DEFAULT_DURATION`
 (from `App.tsx`) as the fallback everywhere. `ThemeToggle.tsx` is the shared
 chrome-theme button (upload corner + setup topbar; the presenter has no
@@ -31,6 +32,10 @@ Drop zone + file picker + "Try the sample sketch" (fetches
 
 - Pre-renders every cumulative step SVG on mount (`renderAllSteps`) with a
   progress bar; nothing is rendered live during the show.
+- In spotlight mode the deck has `order.length + 1` slides — the extra last
+  one is the full drawing with dimming lifted. `count` (not `order.length`)
+  is the source of truth for navigation, the counter, and the timeline;
+  `durationOf` falls back to `DEFAULT_DURATION` for the restore frame.
 - Crossfade: only layers within ±1 of the current index stay mounted,
   stacked absolutely; stepping toggles CSS `opacity`. Correct alignment of
   the stack depends on the all-elements export invariant in

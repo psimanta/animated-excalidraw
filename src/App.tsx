@@ -20,6 +20,8 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   /** Render the drawing itself with Excalidraw's dark filter. */
   const [darkCanvas, setDarkCanvas] = useState(false);
+  /** Dim earlier steps to 30% so the newest reveal stands out. */
+  const [spotlight, setSpotlight] = useState(false);
   // The inline script in index.html resolves the initial theme (saved
   // preference, else OS setting) before first paint; pick it up from there.
   const [theme, setTheme] = useState<Theme>(() =>
@@ -90,6 +92,7 @@ export default function App() {
         order={order}
         durations={durations}
         darkCanvas={darkCanvas}
+        spotlight={spotlight}
         onExit={() => setPresenting(false)}
       />
     );
@@ -103,6 +106,8 @@ export default function App() {
       durations={durations}
       darkCanvas={darkCanvas}
       onDarkCanvasChange={setDarkCanvas}
+      spotlight={spotlight}
+      onSpotlightChange={setSpotlight}
       onOrderChange={setOrder}
       onDurationsChange={setDurations}
       onPresent={() => setPresenting(true)}

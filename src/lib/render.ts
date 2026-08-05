@@ -40,28 +40,46 @@ function toResponsiveSvg(svg: SVGSVGElement): string {
   return svg.outerHTML;
 }
 
+export interface RenderOptions {
+  /** Render the drawing with Excalidraw's dark-theme filter. */
+  darkCanvas?: boolean;
+  /** Dim already-revealed units to 30% so the newest unit stands out. */
+  spotlight?: boolean;
+}
+
+/** How much of their own opacity dimmed units keep in spotlight mode. */
+const SPOTLIGHT_DIM = 0.3;
+
 /**
  * Render the cumulative state of one step: every element is included so the
  * canvas bounds never shift between steps, but elements belonging to units
- * that haven't been revealed yet are exported fully transparent.
+ * that haven't been revealed yet are exported fully transparent. With
+ * `spotlight`, units revealed before this step keep only 30% of their own
+ * opacity, putting the current step's unit in focus.
  */
 export async function renderStep(
   scene: LoadedScene,
   units: Unit[],
   order: string[],
   upToIndex: number,
-  darkCanvas = false,
+  { darkCanvas = false, spotlight = false }: RenderOptions = {},
 ): Promise<string> {
   const unitById = new Map(units.map((u) => [u.id, u]));
-  const visible = new Set<string>();
-  for (let i = 0; i <= upToIndex && i < order.length; i++) {
+  // Element id → position of its unit in the reveal order.
+  const revealIndex = new Map<string, number>();
+  for (let i = 0; i < order.length; i++) {
     for (const id of unitById.get(order[i])?.elementIds ?? []) {
-      visible.add(id);
+      revealIndex.set(id, i);
     }
   }
-  const elements = scene.elements.map((el) =>
-    visible.has(el.id) ? el : { ...el, opacity: 0 },
-  );
+  const elements = scene.elements.map((el) => {
+    const idx = revealIndex.get(el.id);
+    if (idx === undefined || idx > upToIndex) return { ...el, opacity: 0 };
+    if (spotlight && idx < upToIndex) {
+      return { ...el, opacity: el.opacity * SPOTLIGHT_DIM };
+    }
+    return el;
+  });
   const svg = await exportToSvg({
     elements: elements as unknown as AnyElements,
     appState: exportAppState(scene, darkCanvas),
@@ -71,18 +89,32 @@ export async function renderStep(
   return toResponsiveSvg(svg);
 }
 
-/** Render every cumulative step for presenting. */
+/**
+ * Render every cumulative step for presenting. In spotlight mode one extra
+ * final frame is appended with the dimming lifted, so the show ends on the
+ * complete drawing at full strength.
+ */
 export async function renderAllSteps(
   scene: LoadedScene,
   units: Unit[],
   order: string[],
-  darkCanvas = false,
+  options: RenderOptions = {},
   onProgress?: (done: number, total: number) => void,
 ): Promise<string[]> {
+  const total = order.length + (options.spotlight ? 1 : 0);
   const out: string[] = [];
   for (let i = 0; i < order.length; i++) {
-    out.push(await renderStep(scene, units, order, i, darkCanvas));
-    onProgress?.(i + 1, order.length);
+    out.push(await renderStep(scene, units, order, i, options));
+    onProgress?.(out.length, total);
+  }
+  if (options.spotlight) {
+    out.push(
+      await renderStep(scene, units, order, order.length - 1, {
+        ...options,
+        spotlight: false,
+      }),
+    );
+    onProgress?.(out.length, total);
   }
   return out;
 }

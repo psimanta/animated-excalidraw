@@ -9,6 +9,7 @@ interface Props {
   order: string[];
   durations: Record<string, number>;
   darkCanvas: boolean;
+  spotlight: boolean;
   onExit: () => void;
 }
 
@@ -18,6 +19,7 @@ export function PresentScreen({
   order,
   durations,
   darkCanvas,
+  spotlight,
   onExit,
 }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -36,9 +38,13 @@ export function PresentScreen({
     setProgress(p);
   }, []);
 
-  const count = order.length;
+  // Spotlight shows end on one extra frame: the full drawing, undimmed.
+  const count = order.length + (spotlight ? 1 : 0);
   const durationOf = useCallback(
-    (i: number) => durations[order[i]] ?? DEFAULT_DURATION,
+    (i: number) =>
+      i < order.length
+        ? (durations[order[i]] ?? DEFAULT_DURATION)
+        : DEFAULT_DURATION,
     [durations, order],
   );
 
@@ -46,9 +52,15 @@ export function PresentScreen({
   useEffect(() => {
     let cancelled = false;
     setSlides(null);
-    renderAllSteps(scene, units, order, darkCanvas, (done, total) => {
-      if (!cancelled) setPrepProgress(done / total);
-    })
+    renderAllSteps(
+      scene,
+      units,
+      order,
+      { darkCanvas, spotlight },
+      (done, total) => {
+        if (!cancelled) setPrepProgress(done / total);
+      },
+    )
       .then((svgs) => {
         if (!cancelled) setSlides(svgs);
       })
@@ -58,7 +70,7 @@ export function PresentScreen({
     return () => {
       cancelled = true;
     };
-  }, [scene, units, order, darkCanvas]);
+  }, [scene, units, order, darkCanvas, spotlight]);
 
   const goTo = useCallback(
     (i: number) => {
@@ -243,12 +255,16 @@ export function PresentScreen({
         </span>
 
         <div className="timeline" role="tablist" aria-label="Steps">
-          {order.map((id, i) => (
+          {Array.from({ length: count }, (_, i) => (
             <button
-              key={id}
+              key={i < order.length ? order[i] : "spotlight-restore"}
               role="tab"
               aria-selected={i === index}
-              aria-label={`Go to step ${i + 1}`}
+              aria-label={
+                i < order.length
+                  ? `Go to step ${i + 1}`
+                  : "Go to the full drawing"
+              }
               className="timeline-seg"
               style={{ flexGrow: durationOf(i) }}
               onClick={() => goTo(i)}

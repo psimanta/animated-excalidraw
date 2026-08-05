@@ -11,6 +11,8 @@ interface Props {
   durations: Record<string, number>;
   darkCanvas: boolean;
   onDarkCanvasChange: (dark: boolean) => void;
+  spotlight: boolean;
+  onSpotlightChange: (spotlight: boolean) => void;
   onOrderChange: (order: string[]) => void;
   onDurationsChange: (durations: Record<string, number>) => void;
   onPresent: () => void;
@@ -33,6 +35,8 @@ export function SetupScreen({
   durations,
   darkCanvas,
   onDarkCanvasChange,
+  spotlight,
+  onSpotlightChange,
   onOrderChange,
   onDurationsChange,
   onPresent,
@@ -52,7 +56,7 @@ export function SetupScreen({
   // Render the cumulative build state for the selected step; cancel stale runs.
   useEffect(() => {
     let cancelled = false;
-    renderStep(scene, units, order, selectedIndex, darkCanvas)
+    renderStep(scene, units, order, selectedIndex, { darkCanvas, spotlight })
       .then((svg) => {
         if (!cancelled) setPreview(svg);
       })
@@ -62,12 +66,12 @@ export function SetupScreen({
     return () => {
       cancelled = true;
     };
-  }, [scene, units, order, selectedIndex, darkCanvas]);
+  }, [scene, units, order, selectedIndex, darkCanvas, spotlight]);
 
-  const totalSeconds = order.reduce(
-    (sum, id) => sum + (durations[id] ?? DEFAULT_DURATION),
-    0,
-  );
+  const totalSeconds =
+    order.reduce((sum, id) => sum + (durations[id] ?? DEFAULT_DURATION), 0) +
+    // Spotlight shows add a final full-drawing frame.
+    (spotlight ? DEFAULT_DURATION : 0);
 
   const setDuration = (id: string, value: number) => {
     onDurationsChange({ ...durations, [id]: value });
@@ -256,6 +260,17 @@ export function SetupScreen({
               After step {selectedIndex + 1} of {order.length} — click any
               step to preview the build up to it.
             </p>
+            <label
+              className="canvas-mode"
+              title="Dim earlier steps to 30% so the newest one stands out; the show ends on the full drawing."
+            >
+              <input
+                type="checkbox"
+                checked={spotlight}
+                onChange={(e) => onSpotlightChange(e.target.checked)}
+              />
+              Spotlight current step
+            </label>
             <label className="canvas-mode">
               <input
                 type="checkbox"

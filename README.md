@@ -42,6 +42,14 @@ without a file.
 | `Home` / `End` | First / last step |
 | `Esc` | Exit to setup |
 
+## Spotlight
+
+**Spotlight current step** (checkbox under the setup preview) dims every
+already-revealed step to 30% while the newest one appears at full strength —
+ideal for walking through architecture diagrams. Spotlight shows get one
+extra final frame with the dimming lifted, so you end on the complete
+drawing.
+
 ## Dark mode
 
 - The app chrome follows your OS theme by default; use the ☀︎/☾ button

@@ -16,6 +16,12 @@
 
 ## render.ts
 
+- `renderStep`/`renderAllSteps` take a `RenderOptions` object
+  (`darkCanvas`, `spotlight`). Spotlight gives three opacity tiers: current
+  unit at its own opacity, earlier units at 30% of theirs
+  (`SPOTLIGHT_DIM`), future units at 0. `renderAllSteps` appends one extra
+  final frame with spotlight lifted (full drawing) — the presenter counts
+  slides as `order.length + 1` in that mode.
 - **Core invariant**: `renderStep` exports *all* scene elements every time —
   not-yet-revealed ones get `opacity: 0`, they are never filtered out.
   `exportToSvg` fits its canvas to the elements it receives, so including

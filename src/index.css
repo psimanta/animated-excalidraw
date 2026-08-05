@@ -1,0 +1,702 @@
+/* ---------------------------------------------------------------------------
+   Excalidraw Presenter — design tokens
+   Paper-white chrome that speaks the sketch's own language (Excalifont for
+   display, Cascadia for timing digits), and a dark "lights down" stage for
+   presenting. Accent is Excalidraw's violet.
+--------------------------------------------------------------------------- */
+
+@font-face {
+  font-family: "Excalifont";
+  src: url("/fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2")
+    format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cascadia Code";
+  src: url("/fonts/Cascadia/CascadiaCode-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --paper: #faf9f5;
+  --card: #ffffff;
+  --ink: #1e1e24;
+  --ink-soft: #6c6b76;
+  --line: #e5e2d9;
+  --accent: #6965db;
+  --accent-deep: #4b47c4;
+  --accent-wash: #edecfb;
+  --danger: #c92a2a;
+  --stage: #16151c;
+  --stage-soft: #23222c;
+  --stage-text: #b9b7c4;
+
+  --font-display: "Excalifont", "Segoe Print", "Comic Sans MS", cursive;
+  --font-body:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-mono: "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: 0.01em;
+}
+
+/* --- Buttons ------------------------------------------------------------- */
+
+.btn {
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  line-height: 1.3;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  /* Slightly uneven corners: the hand-drawn wobble, kept subtle. */
+  border-radius: 12px 10px 13px 10px;
+}
+
+.btn-primary:hover {
+  background: var(--accent-deep);
+}
+
+.btn-ghost {
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+}
+
+.btn-ghost:hover {
+  border-color: var(--ink-soft);
+}
+
+.btn-small {
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* --- Upload screen -------------------------------------------------------- */
+
+.upload-screen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 24px;
+}
+
+.upload-brand {
+  color: var(--ink-soft);
+}
+
+.dropzone {
+  width: min(620px, 100%);
+  padding: 56px 48px;
+  text-align: center;
+  background: var(--card);
+  border: 2.5px dashed var(--line);
+  /* Hand-drawn rectangle: unequal radii like a quick marker stroke. */
+  border-radius: 22px 14px 24px 13px / 14px 24px 13px 22px;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.dropzone.is-dragging {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.dropzone h1 {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 34px;
+}
+
+.dropzone-sub {
+  margin: 0 auto 28px;
+  max-width: 40ch;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.dropzone-sub code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--paper);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+
+.dropzone-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.dropzone-status {
+  color: var(--accent-deep);
+  font-weight: 600;
+}
+
+.dropzone-error {
+  margin: 20px 0 0;
+  color: var(--danger);
+}
+
+.upload-hint {
+  color: var(--ink-soft);
+  font-size: 13.5px;
+}
+
+/* --- Setup screen ---------------------------------------------------------- */
+
+.setup-screen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 20px;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar-file {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.setup-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+/* Filmstrip */
+
+.filmstrip {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-right: 1px solid var(--line);
+}
+
+.filmstrip-head {
+  padding: 16px 18px 10px;
+}
+
+.filmstrip-head h2 {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 19px;
+}
+
+.filmstrip-head p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.step-list {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px 12px 12px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.step-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px 10px 12px 10px / 10px 12px 10px 12px;
+  background: var(--card);
+  cursor: grab;
+  transition:
+    border-color 130ms ease,
+    background-color 130ms ease,
+    opacity 130ms ease;
+}
+
+.step-card.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.step-card.is-dragging {
+  opacity: 0.35;
+}
+
+.step-card.is-drop-target {
+  box-shadow: 0 -2px 0 0 var(--accent);
+}
+
+.step-index {
+  width: 20px;
+  text-align: right;
+  color: var(--ink-soft);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.step-thumb {
+  width: 62px;
+  height: 46px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.thumb-svg {
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
+.thumb-svg svg {
+  width: 100%;
+  height: 100%;
+}
+
+.thumb-empty {
+  color: var(--ink-soft);
+}
+
+.step-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.step-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.step-kind {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+
+.step-side {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.duration-field {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.duration-field input {
+  width: 46px;
+  padding: 3px 5px;
+  border: 1.5px solid var(--line);
+  border-radius: 7px;
+  background: var(--card);
+  color: var(--ink);
+  text-align: right;
+}
+
+.step-nudge {
+  display: flex;
+  flex-direction: column;
+}
+
+.step-nudge button {
+  font-size: 9px;
+  line-height: 1.4;
+  padding: 1px 4px;
+  color: var(--ink-soft);
+  border-radius: 4px;
+}
+
+.step-nudge button:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--line);
+}
+
+.step-nudge button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.filmstrip-foot {
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bulk-duration {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.bulk-duration input {
+  width: 52px;
+  padding: 4px 6px;
+  border: 1.5px solid var(--line);
+  border-radius: 7px;
+  text-align: right;
+}
+
+/* Preview stage */
+
+.stage-preview {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 28px;
+}
+
+.preview-paper {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.canvas-svg {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.canvas-svg svg {
+  filter: drop-shadow(0 6px 24px rgba(30, 30, 36, 0.14));
+}
+
+.preview-loading {
+  color: var(--ink-soft);
+}
+
+.preview-caption {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* --- Present screen: lights down ------------------------------------------ */
+
+.present-screen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--stage);
+  color: var(--stage-text);
+  animation: lights-down 420ms ease-out;
+}
+
+@keyframes lights-down {
+  from {
+    background: var(--paper);
+  }
+  to {
+    background: var(--stage);
+  }
+}
+
+.present-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-family: var(--font-display);
+  font-size: 19px;
+}
+
+.prep-bar {
+  width: 220px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--stage-soft);
+  overflow: hidden;
+}
+
+.prep-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 160ms ease;
+}
+
+.present-stage {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  margin: 28px 36px 14px;
+  cursor: pointer;
+  animation: stage-in 460ms ease-out;
+}
+
+@keyframes stage-in {
+  from {
+    transform: scale(0.975);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.present-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 340ms ease;
+}
+
+.present-layer svg {
+  filter: drop-shadow(0 14px 44px rgba(0, 0, 0, 0.5));
+}
+
+/* Controls */
+
+.present-controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 24px 16px;
+}
+
+.control-cluster {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ctl {
+  min-width: 38px;
+  height: 34px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  color: var(--stage-text);
+  font-size: 15px;
+  transition:
+    background-color 130ms ease,
+    color 130ms ease;
+}
+
+.ctl:hover:not(:disabled) {
+  background: var(--stage-soft);
+  color: #fff;
+}
+
+.ctl:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.ctl-play {
+  border: 1.5px solid var(--stage-soft);
+  font-size: 13px;
+}
+
+.ctl-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.ctl-text.is-on {
+  color: #fff;
+  background: var(--accent);
+}
+
+.ctl-text.is-on:hover {
+  background: var(--accent-deep);
+}
+
+.present-counter {
+  font-size: 13px;
+  min-width: 58px;
+  text-align: center;
+}
+
+/* Duration-weighted timeline: each segment's width is its step's share of
+   the total autoplay time; the current segment fills as it plays. */
+
+.timeline {
+  flex: 1;
+  display: flex;
+  gap: 5px;
+  height: 22px;
+  align-items: center;
+}
+
+.timeline-seg {
+  flex-basis: 0;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--stage-soft);
+  overflow: hidden;
+  transition: height 130ms ease;
+}
+
+.timeline-seg:hover {
+  height: 9px;
+}
+
+.timeline-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+}
+
+/* --- Quality floor --------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .setup-body {
+    flex-direction: column;
+  }
+
+  .filmstrip {
+    width: 100%;
+    max-height: 45%;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .present-controls {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .timeline {
+    order: -1;
+    flex-basis: 100%;
+  }
+}

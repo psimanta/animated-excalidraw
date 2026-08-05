@@ -2,16 +2,21 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { LoadedScene, Unit } from "../types";
 import { renderStep } from "../lib/render";
 import { DEFAULT_DURATION } from "../App";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface Props {
   scene: LoadedScene;
   units: Unit[];
   order: string[];
   durations: Record<string, number>;
+  darkCanvas: boolean;
+  onDarkCanvasChange: (dark: boolean) => void;
   onOrderChange: (order: string[]) => void;
   onDurationsChange: (durations: Record<string, number>) => void;
   onPresent: () => void;
   onReplaceFile: () => void;
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
 }
 
 function moveItem(list: string[], from: number, to: number): string[] {
@@ -26,10 +31,14 @@ export function SetupScreen({
   units,
   order,
   durations,
+  darkCanvas,
+  onDarkCanvasChange,
   onOrderChange,
   onDurationsChange,
   onPresent,
   onReplaceFile,
+  theme,
+  onToggleTheme,
 }: Props) {
   const unitById = useMemo(() => new Map(units.map((u) => [u.id, u])), [units]);
   const [selected, setSelected] = useState(0);
@@ -43,7 +52,7 @@ export function SetupScreen({
   // Render the cumulative build state for the selected step; cancel stale runs.
   useEffect(() => {
     let cancelled = false;
-    renderStep(scene, units, order, selectedIndex)
+    renderStep(scene, units, order, selectedIndex, darkCanvas)
       .then((svg) => {
         if (!cancelled) setPreview(svg);
       })
@@ -53,7 +62,7 @@ export function SetupScreen({
     return () => {
       cancelled = true;
     };
-  }, [scene, units, order, selectedIndex]);
+  }, [scene, units, order, selectedIndex, darkCanvas]);
 
   const totalSeconds = order.reduce(
     (sum, id) => sum + (durations[id] ?? DEFAULT_DURATION),
@@ -86,6 +95,7 @@ export function SetupScreen({
           autoplay
         </span>
         <div className="topbar-actions">
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
           <button className="btn btn-ghost" onClick={onReplaceFile}>
             Replace file
           </button>
@@ -241,10 +251,20 @@ export function SetupScreen({
               <span className="preview-loading">Rendering…</span>
             )}
           </div>
-          <p className="preview-caption">
-            After step {selectedIndex + 1} of {order.length} — click any step
-            to preview the build up to it.
-          </p>
+          <div className="preview-foot">
+            <p className="preview-caption">
+              After step {selectedIndex + 1} of {order.length} — click any
+              step to preview the build up to it.
+            </p>
+            <label className="canvas-mode">
+              <input
+                type="checkbox"
+                checked={darkCanvas}
+                onChange={(e) => onDarkCanvasChange(e.target.checked)}
+              />
+              Dark canvas
+            </label>
+          </div>
         </main>
       </div>
     </div>

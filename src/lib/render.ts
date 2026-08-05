@@ -4,11 +4,13 @@ import type { LoadedScene, SceneElement, Unit } from "../types";
 type AnyElements = Parameters<typeof exportToSvg>[0]["elements"];
 type AnyFiles = Parameters<typeof exportToSvg>[0]["files"];
 
-function exportAppState(scene: LoadedScene) {
+function exportAppState(scene: LoadedScene, darkCanvas: boolean) {
   return {
     ...scene.appState,
     exportBackground: true,
-    exportWithDarkMode: false,
+    // Excalidraw applies its dark-theme inversion filter at export time;
+    // the stored scene colors are always the light ones.
+    exportWithDarkMode: darkCanvas,
     exportEmbedScene: false,
     viewBackgroundColor:
       (scene.appState.viewBackgroundColor as string) || "#ffffff",
@@ -25,6 +27,16 @@ function toResponsiveSvg(svg: SVGSVGElement): string {
   svg.setAttribute("width", "100%");
   svg.setAttribute("height", "100%");
   svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+  // Excalidraw applies its dark-mode inversion as a `filter` *attribute* on
+  // the root; any stylesheet `filter` on the svg would override it (CSS
+  // beats presentation attributes). Promote it to an inline style so it
+  // always survives — which is also why our drop-shadows live on wrapper
+  // elements, never on the svg itself.
+  const themeFilter = svg.getAttribute("filter");
+  if (themeFilter) {
+    svg.removeAttribute("filter");
+    svg.style.filter = themeFilter;
+  }
   return svg.outerHTML;
 }
 
@@ -38,6 +50,7 @@ export async function renderStep(
   units: Unit[],
   order: string[],
   upToIndex: number,
+  darkCanvas = false,
 ): Promise<string> {
   const unitById = new Map(units.map((u) => [u.id, u]));
   const visible = new Set<string>();
@@ -51,7 +64,7 @@ export async function renderStep(
   );
   const svg = await exportToSvg({
     elements: elements as unknown as AnyElements,
-    appState: exportAppState(scene),
+    appState: exportAppState(scene, darkCanvas),
     files: scene.files as AnyFiles,
     exportPadding: 24,
   });
@@ -63,11 +76,12 @@ export async function renderAllSteps(
   scene: LoadedScene,
   units: Unit[],
   order: string[],
+  darkCanvas = false,
   onProgress?: (done: number, total: number) => void,
 ): Promise<string[]> {
   const out: string[] = [];
   for (let i = 0; i < order.length; i++) {
-    out.push(await renderStep(scene, units, order, i));
+    out.push(await renderStep(scene, units, order, i, darkCanvas));
     onProgress?.(i + 1, order.length);
   }
   return out;
@@ -82,10 +96,12 @@ export async function renderUnitThumbnail(
   const elements = scene.elements.filter((el) => ids.has(el.id));
   if (elements.length === 0) return null;
   try {
+    // Thumbnails are always rendered light: they sit on white tiles in the
+    // filmstrip regardless of chrome theme or the canvas setting.
     const svg = await exportToSvg({
       elements: elements as unknown as AnyElements,
       appState: {
-        ...exportAppState(scene),
+        ...exportAppState(scene, false),
         exportBackground: false,
       },
       files: scene.files as AnyFiles,

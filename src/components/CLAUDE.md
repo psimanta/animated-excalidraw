@@ -1,10 +1,14 @@
 # src/components — screens
 
 One file per screen; all are controlled components. `App.tsx` owns `scene`,
-`units`, `order`, and `durations` — screens receive them plus callbacks and
-keep only transient UI state (selection, drag state, autoplay progress).
-`order` is an array of unit ids; `durations` is keyed by unit id, with
-`DEFAULT_DURATION` (from `App.tsx`) as the fallback everywhere.
+`units`, `order`, `durations`, plus `theme` (chrome light/dark) and
+`darkCanvas` (drawing rendered with Excalidraw's dark filter — independent
+of chrome theme) — screens receive them plus callbacks and keep only
+transient UI state (selection, drag state, autoplay progress). `order` is an
+array of unit ids; `durations` is keyed by unit id, with `DEFAULT_DURATION`
+(from `App.tsx`) as the fallback everywhere. `ThemeToggle.tsx` is the shared
+chrome-theme button (upload corner + setup topbar; the presenter has no
+chrome theme).
 
 ## UploadScreen.tsx
 

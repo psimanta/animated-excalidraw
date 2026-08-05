@@ -29,6 +29,12 @@
   `viewBox`, `preserveAspectRatio="xMidYMid meet"`) so SVGs letterbox into
   any container. Callers inject the returned markup with
   `dangerouslySetInnerHTML`.
+- **Dark canvas**: `renderStep`/`renderAllSteps` take a `darkCanvas` flag →
+  `exportWithDarkMode`. Excalidraw expresses it as a `filter` *attribute* on
+  the svg root, which any stylesheet `filter` rule on the svg would silently
+  override — `toResponsiveSvg` promotes it to an inline style, and all
+  drop-shadows in `index.css` live on wrapper elements, never on the svg.
+  Thumbnails intentionally ignore the flag (always light, on white tiles).
 - Thumbnails are the exception to the all-elements rule: they render only
   the unit's own elements, tightly cropped, without background.
 - `exportToSvg` is async and fetches fonts via `EXCALIDRAW_ASSET_PATH`

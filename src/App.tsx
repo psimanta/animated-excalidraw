@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { LoadedScene, Unit } from "./types";
 import { computeUnits, loadScene } from "./lib/scene";
 import { withThumbnails } from "./lib/render";
@@ -8,6 +8,8 @@ import { PresentScreen } from "./components/PresentScreen";
 
 export const DEFAULT_DURATION = 3;
 
+type Theme = "light" | "dark";
+
 export default function App() {
   const [scene, setScene] = useState<LoadedScene | null>(null);
   const [units, setUnits] = useState<Unit[]>([]);
@@ -16,6 +18,23 @@ export default function App() {
   const [presenting, setPresenting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Render the drawing itself with Excalidraw's dark filter. */
+  const [darkCanvas, setDarkCanvas] = useState(false);
+  // The inline script in index.html resolves the initial theme (saved
+  // preference, else OS setting) before first paint; pick it up from there.
+  const [theme, setTheme] = useState<Theme>(() =>
+    document.documentElement.dataset.theme === "dark" ? "dark" : "light",
+  );
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("presenter-theme", theme);
+  }, [theme]);
+
+  const toggleTheme = useCallback(
+    () => setTheme((t) => (t === "dark" ? "light" : "dark")),
+    [],
+  );
 
   const openFile = useCallback(async (blob: Blob, name: string) => {
     setLoading(true);
@@ -52,7 +71,15 @@ export default function App() {
   }, []);
 
   if (!scene) {
-    return <UploadScreen onFile={openFile} loading={loading} error={error} />;
+    return (
+      <UploadScreen
+        onFile={openFile}
+        loading={loading}
+        error={error}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
+    );
   }
 
   if (presenting) {
@@ -62,6 +89,7 @@ export default function App() {
         units={units}
         order={order}
         durations={durations}
+        darkCanvas={darkCanvas}
         onExit={() => setPresenting(false)}
       />
     );
@@ -73,10 +101,14 @@ export default function App() {
       units={units}
       order={order}
       durations={durations}
+      darkCanvas={darkCanvas}
+      onDarkCanvasChange={setDarkCanvas}
       onOrderChange={setOrder}
       onDurationsChange={setDurations}
       onPresent={() => setPresenting(true)}
       onReplaceFile={reset}
+      theme={theme}
+      onToggleTheme={toggleTheme}
     />
   );
 }

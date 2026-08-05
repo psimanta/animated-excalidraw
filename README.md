@@ -42,6 +42,14 @@ without a file.
 | `Home` / `End` | First / last step |
 | `Esc` | Exit to setup |
 
+## Dark mode
+
+- The app chrome follows your OS theme by default; use the ☀︎/☾ button
+  (upload screen or setup top bar) to override. The choice is remembered.
+- **Dark canvas** (checkbox under the setup preview) renders the drawing
+  itself with Excalidraw's dark-theme filter, for presenting in dark rooms.
+  It's independent of the chrome theme and off by default.
+
 ## Notes
 
 - Excalidraw's scene fonts are served locally from `public/fonts` (copied

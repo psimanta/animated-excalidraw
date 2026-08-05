@@ -8,10 +8,18 @@ interface Props {
   units: Unit[];
   order: string[];
   durations: Record<string, number>;
+  darkCanvas: boolean;
   onExit: () => void;
 }
 
-export function PresentScreen({ scene, units, order, durations, onExit }: Props) {
+export function PresentScreen({
+  scene,
+  units,
+  order,
+  durations,
+  darkCanvas,
+  onExit,
+}: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [slides, setSlides] = useState<string[] | null>(null);
   const [prepProgress, setPrepProgress] = useState(0);
@@ -38,7 +46,7 @@ export function PresentScreen({ scene, units, order, durations, onExit }: Props)
   useEffect(() => {
     let cancelled = false;
     setSlides(null);
-    renderAllSteps(scene, units, order, (done, total) => {
+    renderAllSteps(scene, units, order, darkCanvas, (done, total) => {
       if (!cancelled) setPrepProgress(done / total);
     })
       .then((svgs) => {
@@ -50,7 +58,7 @@ export function PresentScreen({ scene, units, order, durations, onExit }: Props)
     return () => {
       cancelled = true;
     };
-  }, [scene, units, order]);
+  }, [scene, units, order, darkCanvas]);
 
   const goTo = useCallback(
     (i: number) => {

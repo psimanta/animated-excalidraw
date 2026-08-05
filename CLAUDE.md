@@ -48,3 +48,10 @@ APIs otherwise untouched.
   grouped reveals.
 - All styling is in `src/index.css` — one file, design tokens at the top
   (paper-white chrome, dark presenter stage, Excalidraw-violet accent).
+- **Theming**: chrome theme is a `data-theme` attribute on `<html>` —
+  resolved before first paint by the inline script in `index.html`
+  (localStorage `presenter-theme`, else OS preference), owned by `App.tsx`
+  afterwards, dark tokens in the `:root[data-theme="dark"]` block. The
+  presenter stage is dark in both themes by design. Separately, "Dark
+  canvas" (checkbox in setup) renders the drawing itself with Excalidraw's
+  dark filter — see `src/lib/CLAUDE.md` for the filter-attribute pitfall.

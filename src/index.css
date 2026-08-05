@@ -39,6 +39,30 @@
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;
   --font-mono: "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+
+  color-scheme: light;
+}
+
+/* Dark chrome: same structure, night-desk palette. The presenter stage is
+   dark by design in both themes; this only re-skins the upload/setup chrome.
+   The drawing itself is a separate per-presentation "Dark canvas" setting. */
+:root[data-theme="dark"] {
+  --paper: #18171e;
+  --card: #211f29;
+  --ink: #e8e6f0;
+  --ink-soft: #9b99a8;
+  --line: #322f3d;
+  --accent: #6965db;
+  --accent-deep: #7d79e6;
+  --accent-wash: #2a2840;
+  --danger: #ff8787;
+
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] .canvas-svg {
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.18))
+    drop-shadow(0 8px 28px rgba(0, 0, 0, 0.5));
 }
 
 * {
@@ -130,9 +154,27 @@ input:focus-visible {
   font-weight: 500;
 }
 
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  transition: border-color 140ms ease;
+}
+
+.btn-icon:hover {
+  border-color: var(--ink-soft);
+}
+
 /* --- Upload screen -------------------------------------------------------- */
 
 .upload-screen {
+  position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -140,6 +182,12 @@ input:focus-visible {
   justify-content: center;
   gap: 28px;
   padding: 24px;
+}
+
+.upload-corner {
+  position: absolute;
+  top: 16px;
+  right: 16px;
 }
 
 .upload-brand {
@@ -328,6 +376,8 @@ input:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Always white, even in dark chrome: thumbnails read as little paper
+     slides and stay legible whatever the drawing's own colors are. */
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -439,6 +489,8 @@ input:focus-visible {
   padding: 4px 6px;
   border: 1.5px solid var(--line);
   border-radius: 7px;
+  background: var(--card);
+  color: var(--ink);
   text-align: right;
 }
 
@@ -464,15 +516,15 @@ input:focus-visible {
   justify-content: center;
 }
 
+/* Drop-shadows go on wrappers, not on the svg element: a stylesheet
+   `filter` on the svg would override Excalidraw's dark-mode filter
+   (see toResponsiveSvg in src/lib/render.ts). */
 .canvas-svg {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.canvas-svg svg {
   filter: drop-shadow(0 6px 24px rgba(30, 30, 36, 0.14));
 }
 
@@ -480,10 +532,32 @@ input:focus-visible {
   color: var(--ink-soft);
 }
 
+.preview-foot {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .preview-caption {
   margin: 0;
   font-size: 13px;
   color: var(--ink-soft);
+}
+
+.canvas-mode {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  user-select: none;
+}
+
+.canvas-mode input {
+  accent-color: var(--accent);
 }
 
 /* --- Present screen: lights down ------------------------------------------ */
@@ -560,8 +634,12 @@ input:focus-visible {
   transition: opacity 340ms ease;
 }
 
-.present-layer svg {
-  filter: drop-shadow(0 14px 44px rgba(0, 0, 0, 0.5));
+.present-layer {
+  /* The tight light halo keeps the canvas edge visible when the drawing
+     itself is rendered dark; it's invisible against a white canvas.
+     On the wrapper, not the svg — see the note above .canvas-svg. */
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.22))
+    drop-shadow(0 14px 44px rgba(0, 0, 0, 0.5));
 }
 
 /* Controls */

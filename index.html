@@ -12,6 +12,14 @@
       // Must be set before any Excalidraw module code runs so scene fonts are
       // fetched from this origin (copied into /public/fonts) instead of a CDN.
       window.EXCALIDRAW_ASSET_PATH = "/";
+      // Apply the chrome theme before first paint to avoid a flash.
+      var theme = localStorage.getItem("presenter-theme");
+      if (theme !== "light" && theme !== "dark") {
+        theme = matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+      }
+      document.documentElement.dataset.theme = theme;
     </script>
     <link
       rel="preload"

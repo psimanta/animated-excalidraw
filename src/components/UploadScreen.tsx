@@ -1,12 +1,21 @@
 import { useCallback, useRef, useState } from "react";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface Props {
   onFile: (blob: Blob, name: string) => void;
   loading: boolean;
   error: string | null;
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
 }
 
-export function UploadScreen({ onFile, loading, error }: Props) {
+export function UploadScreen({
+  onFile,
+  loading,
+  error,
+  theme,
+  onToggleTheme,
+}: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [sampleError, setSampleError] = useState(false);
@@ -32,6 +41,9 @@ export function UploadScreen({ onFile, loading, error }: Props) {
 
   return (
     <main className="upload-screen">
+      <div className="upload-corner">
+        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+      </div>
       <header className="upload-brand">
         <span className="wordmark">Excalidraw Presenter</span>
       </header>

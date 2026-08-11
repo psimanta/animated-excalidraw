@@ -110,7 +110,8 @@ export function UploadScreen({
 
       <footer className="upload-hint">
         Tip: elements you group in Excalidraw are revealed together as one
-        step.
+        step, and files with frames present frame by frame (only framed
+        content is shown).
       </footer>
     </main>
   );

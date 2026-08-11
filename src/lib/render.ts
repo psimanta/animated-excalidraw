@@ -1,8 +1,10 @@
 import { exportToSvg } from "@excalidraw/excalidraw";
 import type { LoadedScene, SceneElement, Unit } from "../types";
+import { isFrameElement } from "./scene";
 
 type AnyElements = Parameters<typeof exportToSvg>[0]["elements"];
 type AnyFiles = Parameters<typeof exportToSvg>[0]["files"];
+type AnyFrame = NonNullable<Parameters<typeof exportToSvg>[0]["exportingFrame"]>;
 
 function exportAppState(scene: LoadedScene, darkCanvas: boolean) {
   return {
@@ -12,13 +14,49 @@ function exportAppState(scene: LoadedScene, darkCanvas: boolean) {
     // the stored scene colors are always the light ones.
     exportWithDarkMode: darkCanvas,
     exportEmbedScene: false,
+    // Frames: clip children like the editor does, but never draw frame
+    // names/outlines — exportToSvg injects names as synthetic text elements
+    // at full opacity, which would ignore the reveal and show on every step.
+    frameRendering: { enabled: true, clip: true, name: false, outline: false },
     viewBackgroundColor:
       (scene.appState.viewBackgroundColor as string) || "#ffffff",
   };
 }
 
+let clipScope = 0;
+
+/**
+ * Give every clipPath (and its references) an id unique to this export.
+ * exportToSvg names clipPaths after frame ids, and several step SVGs are
+ * mounted at once (crossfade layers, preview) — `url(#id)` resolves
+ * document-wide to the *first* match, and with per-frame viewports the same
+ * frame's clip rect sits at different coordinates in different steps, so a
+ * collision clips content with another slide's geometry (blanking it).
+ */
+function scopeClipPathIds(svg: SVGSVGElement): void {
+  const clipPaths = svg.querySelectorAll("clipPath");
+  if (clipPaths.length === 0) return;
+  const suffix = `-clip${++clipScope}`;
+  const renamed = new Set<string>();
+  clipPaths.forEach((cp) => {
+    renamed.add(cp.id);
+    cp.id += suffix;
+  });
+  svg.querySelectorAll("g").forEach((g) => {
+    const match = g.getAttribute("clip-path")?.match(/^url\(#(.*)\)$/);
+    if (match && renamed.has(match[1])) {
+      // Excalidraw sets clip-path via setAttributeNS in the SVG namespace;
+      // replace it with a plain attribute carrying the scoped id.
+      g.removeAttributeNS("http://www.w3.org/2000/svg", "clip-path");
+      g.removeAttribute("clip-path");
+      g.setAttribute("clip-path", `url(#${match[1]}${suffix})`);
+    }
+  });
+}
+
 /** Serialize an exported SVG so it scales to its container (letterboxed). */
 function toResponsiveSvg(svg: SVGSVGElement): string {
+  scopeClipPathIds(svg);
   const width = svg.getAttribute("width");
   const height = svg.getAttribute("height");
   if (!svg.getAttribute("viewBox") && width && height) {
@@ -56,6 +94,11 @@ const SPOTLIGHT_DIM = 0.3;
  * that haven't been revealed yet are exported fully transparent. With
  * `spotlight`, units revealed before this step keep only 30% of their own
  * opacity, putting the current step's unit in focus.
+ *
+ * Framed scenes present frame by frame: the canvas is the *current step's
+ * frame* (via `exportingFrame` — the frame rect is the viewport, padding 0,
+ * children clipped), so steps of one frame align pixel-perfectly and moving
+ * to the next frame dissolves to that frame's slide.
  */
 export async function renderStep(
   scene: LoadedScene,
@@ -73,6 +116,11 @@ export async function renderStep(
     }
   }
   const elements = scene.elements.map((el) => {
+    // Frames are never units, but their opacity must stay untouched: the
+    // SVG renderer multiplies every child's opacity by its containing
+    // frame's, so zeroing a frame would blank the whole section. With
+    // names/outlines disabled they draw nothing themselves.
+    if (isFrameElement(el)) return el;
     const idx = revealIndex.get(el.id);
     if (idx === undefined || idx > upToIndex) return { ...el, opacity: 0 };
     if (spotlight && idx < upToIndex) {
@@ -80,11 +128,16 @@ export async function renderStep(
     }
     return el;
   });
+  const currentFrameId = unitById.get(order[upToIndex])?.frameId ?? null;
+  const exportingFrame = currentFrameId
+    ? (scene.elements.find((el) => el.id === currentFrameId) ?? null)
+    : null;
   const svg = await exportToSvg({
     elements: elements as unknown as AnyElements,
     appState: exportAppState(scene, darkCanvas),
     files: scene.files as AnyFiles,
     exportPadding: 24,
+    exportingFrame: exportingFrame as unknown as AnyFrame | null,
   });
   return toResponsiveSvg(svg);
 }

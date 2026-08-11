@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { LoadedScene, Unit } from "../types";
 import { renderAllSteps } from "../lib/render";
+import { LaserPointer } from "./LaserPointer";
 import { DEFAULT_DURATION } from "../App";
 
 interface Props {
@@ -28,6 +29,8 @@ export function PresentScreen({
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(false);
+  /** Laser pointer, lit while ⌘/Ctrl is held. */
+  const [laser, setLaser] = useState(false);
   /** 0..1 through the current step while autoplaying. */
   const [progress, setProgress] = useState(0);
   // Mirror of `progress` so the autoplay clock can resume from a pause
@@ -135,6 +138,12 @@ export function PresentScreen({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Meta" || e.key === "Control") {
+        setLaser(true);
+        return;
+      }
+      // Browser combos (⌘R, Ctrl+F, …) are not ours to handle.
+      if (e.metaKey || e.ctrlKey) return;
       switch (e.key) {
         case "ArrowRight":
         case "Enter":
@@ -170,8 +179,20 @@ export function PresentScreen({
           break;
       }
     };
+    // Release the laser on keyup — and on blur, because ⌘Tab away means
+    // the Meta keyup never reaches us.
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Meta" || e.key === "Control") setLaser(false);
+    };
+    const onBlur = () => setLaser(false);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
+    };
   }, [next, prev, togglePlay, toggleFullscreen, onExit, goTo, count]);
 
   if (!slides) {
@@ -205,7 +226,14 @@ export function PresentScreen({
 
   return (
     <div className="present-screen" ref={rootRef}>
-      <div className="present-stage" onClick={next}>
+      <div
+        className={`present-stage${laser ? " laser-on" : ""}`}
+        onClick={(e) => {
+          // Pointing is not navigating: laser clicks stay put.
+          if (laser || e.metaKey || e.ctrlKey) return;
+          next();
+        }}
+      >
         {/* Only neighbours of the current step stay mounted; opacity
             transitions between them produce the crossfade. */}
         {slides.map((svg, i) =>
@@ -218,6 +246,7 @@ export function PresentScreen({
             />
           ) : null,
         )}
+        <LaserPointer active={laser} />
       </div>
 
       <footer className="present-controls" onClick={(e) => e.stopPropagation()}>

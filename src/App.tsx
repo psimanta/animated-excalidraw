@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { LoadedScene, Unit } from "./types";
-import { computeUnits, loadScene } from "./lib/scene";
+import { computeUnits, loadScene, readSavedPresentation } from "./lib/scene";
 import { withThumbnails } from "./lib/render";
 import { UploadScreen } from "./components/UploadScreen";
 import { SetupScreen } from "./components/SetupScreen";
@@ -45,12 +45,17 @@ export default function App() {
       const loaded = await loadScene(blob, name);
       const bare = computeUnits(loaded.elements);
       const withThumbs = await withThumbnails(loaded, bare);
+      // Files saved from the app carry the arrangement in customData stamps;
+      // fresh files fall back to natural order and the default duration.
+      const saved = readSavedPresentation(
+        loaded.elements,
+        withThumbs,
+        DEFAULT_DURATION,
+      );
       setScene(loaded);
       setUnits(withThumbs);
-      setOrder(withThumbs.map((u) => u.id));
-      setDurations(
-        Object.fromEntries(withThumbs.map((u) => [u.id, DEFAULT_DURATION])),
-      );
+      setOrder(saved.order);
+      setDurations(saved.durations);
       setPresenting(false);
     } catch (err) {
       setError(

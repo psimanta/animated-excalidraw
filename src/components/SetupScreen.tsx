@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import type { LoadedScene, Unit } from "../types";
 import { renderStep } from "../lib/render";
+import { serializeScene } from "../lib/scene";
 import { DEFAULT_DURATION } from "../App";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -21,11 +22,19 @@ interface Props {
   onToggleTheme: () => void;
 }
 
-function moveItem(list: string[], from: number, to: number): string[] {
+function moveItem<T>(list: T[], from: number, to: number): T[] {
   const next = [...list];
   const [item] = next.splice(from, 1);
   next.splice(to, 0, item);
   return next;
+}
+
+/** A contiguous run of steps in `order` sharing a frame (or all of them,
+ * as one anonymous section, when the scene has no frames). */
+interface Section {
+  frameId: string | null;
+  name: string | null;
+  ids: string[];
 }
 
 export function SetupScreen({
@@ -45,6 +54,31 @@ export function SetupScreen({
   onToggleTheme,
 }: Props) {
   const unitById = useMemo(() => new Map(units.map((u) => [u.id, u])), [units]);
+  const hasFrames = scene.frames.length > 0;
+  // Steps stay grouped by frame (an invariant every reorder path preserves),
+  // so contiguous runs of `order` sharing a frame form the sections.
+  const sections = useMemo<Section[]>(() => {
+    const frameName = new Map(scene.frames.map((f) => [f.id, f.name]));
+    const out: Section[] = [];
+    for (const id of order) {
+      const frameId = unitById.get(id)?.frameId ?? null;
+      const last = out[out.length - 1];
+      if (last && last.frameId === frameId) {
+        last.ids.push(id);
+      } else {
+        out.push({
+          frameId,
+          name: frameId ? (frameName.get(frameId) ?? "Frame") : null,
+          ids: [id],
+        });
+      }
+    }
+    return out;
+  }, [order, unitById, scene.frames]);
+  const indexOfId = useMemo(
+    () => new Map(order.map((id, i) => [id, i])),
+    [order],
+  );
   const [selected, setSelected] = useState(0);
   const [preview, setPreview] = useState<string | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -87,6 +121,27 @@ export function SetupScreen({
     setDropIndex(null);
   };
 
+  /** Move a whole frame section, keeping the same unit selected. */
+  const moveSection = (from: number, to: number) => {
+    const selectedId = order[selectedIndex];
+    const nextOrder = moveItem(sections, from, to).flatMap((s) => s.ids);
+    onOrderChange(nextOrder);
+    setSelected(nextOrder.indexOf(selectedId));
+  };
+
+  /** Download the scene as .excalidraw with the arrangement stamped in. */
+  const saveFile = () => {
+    const json = serializeScene(scene, units, order, durations, DEFAULT_DURATION);
+    const url = URL.createObjectURL(
+      new Blob([json], { type: "application/json" }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${scene.name}.excalidraw`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const listRef = useRef<HTMLOListElement>(null);
 
   return (
@@ -94,12 +149,21 @@ export function SetupScreen({
       <header className="topbar">
         <span className="wordmark">Excalidraw Presenter</span>
         <span className="topbar-file" title={scene.name}>
-          {scene.name} · {order.length} steps ·{" "}
+          {scene.name} ·{" "}
+          {hasFrames ? `${scene.frames.length} frames · ` : ""}
+          {order.length} steps ·{" "}
           <span className="mono">{formatSeconds(totalSeconds)}</span> on
           autoplay
         </span>
         <div className="topbar-actions">
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+          <button
+            className="btn btn-ghost"
+            onClick={saveFile}
+            title="Download as .excalidraw with the reveal order and timings saved in"
+          >
+            Save file
+          </button>
           <button className="btn btn-ghost" onClick={onReplaceFile}>
             Replace file
           </button>
@@ -113,14 +177,48 @@ export function SetupScreen({
         <aside className="filmstrip">
           <div className="filmstrip-head">
             <h2>Reveal order</h2>
-            <p>Drag steps to reorder. Times set the autoplay pace.</p>
+            <p>
+              {hasFrames
+                ? "Drag steps to reorder within a frame; ▲▼ on a frame moves the whole section. Times set the autoplay pace."
+                : "Drag steps to reorder. Times set the autoplay pace."}
+            </p>
           </div>
 
           <ol className="step-list" ref={listRef} onDragOver={(e) => e.preventDefault()}>
-            {order.map((id, i) => {
-              const unit = unitById.get(id);
-              if (!unit) return null;
-              return (
+            {sections.map((section, si) => (
+              <Fragment key={section.frameId ?? "unframed"}>
+                {hasFrames && (
+                  <li className="frame-head">
+                    <span className="frame-name" title={section.name ?? undefined}>
+                      {section.name}
+                    </span>
+                    <span className="frame-count">
+                      {section.ids.length}{" "}
+                      {section.ids.length === 1 ? "step" : "steps"}
+                    </span>
+                    <div className="frame-nudge">
+                      <button
+                        aria-label={`Move frame ${section.name} up`}
+                        disabled={si === 0}
+                        onClick={() => moveSection(si, si - 1)}
+                      >
+                        ▲
+                      </button>
+                      <button
+                        aria-label={`Move frame ${section.name} down`}
+                        disabled={si === sections.length - 1}
+                        onClick={() => moveSection(si, si + 1)}
+                      >
+                        ▼
+                      </button>
+                    </div>
+                  </li>
+                )}
+                {section.ids.map((id, pos) => {
+                  const unit = unitById.get(id);
+                  if (!unit) return null;
+                  const i = indexOfId.get(id)!;
+                  return (
                 <li
                   key={id}
                   className={[
@@ -136,6 +234,14 @@ export function SetupScreen({
                   onDragEnd={commitDrop}
                   onDragOver={(e) => {
                     e.preventDefault();
+                    // Steps live inside their frame: only offer drop gaps
+                    // within the dragged card's own section.
+                    if (
+                      dragIndex !== null &&
+                      unitById.get(order[dragIndex])?.frameId !== unit.frameId
+                    ) {
+                      return;
+                    }
                     const rect = e.currentTarget.getBoundingClientRect();
                     const before = e.clientY < rect.top + rect.height / 2;
                     setDropIndex(before ? i : i + 1);
@@ -179,7 +285,7 @@ export function SetupScreen({
                     <div className="step-nudge">
                       <button
                         aria-label="Move step up"
-                        disabled={i === 0}
+                        disabled={pos === 0}
                         onClick={(e) => {
                           e.stopPropagation();
                           onOrderChange(moveItem(order, i, i - 1));
@@ -190,7 +296,7 @@ export function SetupScreen({
                       </button>
                       <button
                         aria-label="Move step down"
-                        disabled={i === order.length - 1}
+                        disabled={pos === section.ids.length - 1}
                         onClick={(e) => {
                           e.stopPropagation();
                           onOrderChange(moveItem(order, i, i + 1));
@@ -202,8 +308,10 @@ export function SetupScreen({
                     </div>
                   </div>
                 </li>
-              );
-            })}
+                  );
+                })}
+              </Fragment>
+            ))}
           </ol>
 
           <div className="filmstrip-foot">

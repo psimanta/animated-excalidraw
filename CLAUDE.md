@@ -22,6 +22,13 @@ presentation state:
 
 - `scene` — parsed file (`LoadedScene`), `units` — reveal units, `order` —
   unit ids in reveal order, `durations` — seconds per unit id.
+- Frames: files with frames present only framed content, one frame per
+  slide (the stage crops to the current step's frame) — `order` stays
+  frame-contiguous (invariants in `src/lib/CLAUDE.md` and
+  `src/components/CLAUDE.md`).
+- "Save file" round-trips the arrangement through `customData.presenter`
+  stamps in a normal `.excalidraw` file — element z-order is never
+  rewritten (see `src/lib/CLAUDE.md`).
 - Screens (`src/components/`) are controlled: they receive state + callbacks
   and hold only local UI state. See `src/components/CLAUDE.md`.
 - Scene parsing, unit computation, and SVG rendering live in `src/lib/`.

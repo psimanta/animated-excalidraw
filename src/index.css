@@ -717,6 +717,38 @@ input:focus-visible {
   padding: 12px 24px 16px;
 }
 
+/* Immersive fullscreen: the canvas takes the whole screen and the control
+   bar becomes a bottom overlay that stays off-screen until the cursor
+   reaches the bottom edge (.controls-peek, set from a mousemove listener)
+   or a control holds keyboard focus. */
+
+.present-screen.is-immersive .present-stage {
+  margin: 0;
+}
+
+.present-screen.is-immersive .present-controls {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Above the slide layers and the laser canvas (z-index 1000). */
+  z-index: 1001;
+  transform: translateY(100%);
+  transition: transform 220ms ease;
+  /* The bar floats over the drawing, so it needs its own ground. */
+  background: rgba(22, 21, 28, 0.92);
+  border-top: 1px solid var(--stage-soft);
+  backdrop-filter: blur(8px);
+}
+
+/* Keyboard reveal uses :focus-visible, not :focus-within — a mouse click
+   on a control (e.g. Full itself) leaves it focused, which would pin the
+   bar open forever. */
+.present-screen.is-immersive.controls-peek .present-controls,
+.present-screen.is-immersive .present-controls:has(:focus-visible) {
+  transform: translateY(0);
+}
+
 .control-cluster {
   display: flex;
   align-items: center;

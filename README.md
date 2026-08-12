@@ -52,6 +52,9 @@ without a file.
 | `Home` / `End` | First / last step |
 | `Esc` | Exit to setup |
 
+In fullscreen the canvas takes the whole screen and the control bar hides —
+move the cursor to the bottom edge to bring it back.
+
 ## Laser pointer
 
 Hold `⌘` (or `Ctrl`) while presenting to turn the cursor into a laser

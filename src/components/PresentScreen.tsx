@@ -31,6 +31,10 @@ export function PresentScreen({
   const [loop, setLoop] = useState(false);
   /** Laser pointer, lit while ⌘/Ctrl is held. */
   const [laser, setLaser] = useState(false);
+  /** Browser fullscreen → immersive layout (edge-to-edge canvas). */
+  const [fullscreen, setFullscreen] = useState(false);
+  /** Cursor near the bottom edge — peeks the control bar while immersive. */
+  const [edgeHover, setEdgeHover] = useState(false);
   /** 0..1 through the current step while autoplaying. */
   const [progress, setProgress] = useState(0);
   // Mirror of `progress` so the autoplay clock can resume from a pause
@@ -136,6 +140,36 @@ export function PresentScreen({
     }
   }, []);
 
+  // Immersive mode follows the browser's fullscreen state (covers F, the
+  // Full button, and native exits like Escape alike).
+  useEffect(() => {
+    const onChange = () => {
+      const fs = document.fullscreenElement !== null;
+      setFullscreen(fs);
+      if (!fs) setEdgeHover(false);
+    };
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  // While immersive, the control bar hides off-screen and peeks when the
+  // cursor reaches the bottom edge (or when a control holds keyboard focus —
+  // that reveal is pure CSS via :focus-within).
+  useEffect(() => {
+    if (!fullscreen) return;
+    const EDGE_PX = 80;
+    const onMove = (e: MouseEvent) => {
+      setEdgeHover(window.innerHeight - e.clientY <= EDGE_PX);
+    };
+    const onLeave = () => setEdgeHover(false);
+    window.addEventListener("mousemove", onMove);
+    document.documentElement.addEventListener("mouseleave", onLeave);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      document.documentElement.removeEventListener("mouseleave", onLeave);
+    };
+  }, [fullscreen]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Meta" || e.key === "Control") {
@@ -225,7 +259,16 @@ export function PresentScreen({
   }
 
   return (
-    <div className="present-screen" ref={rootRef}>
+    <div
+      className={[
+        "present-screen",
+        fullscreen ? "is-immersive" : "",
+        fullscreen && edgeHover ? "controls-peek" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      ref={rootRef}
+    >
       <div
         className={`present-stage${laser ? " laser-on" : ""}`}
         onClick={(e) => {
@@ -328,8 +371,9 @@ export function PresentScreen({
             Loop
           </button>
           <button
-            className="ctl ctl-text"
+            className={`ctl ctl-text${fullscreen ? " is-on" : ""}`}
             onClick={toggleFullscreen}
+            aria-pressed={fullscreen}
             title="Fullscreen (F)"
           >
             Full

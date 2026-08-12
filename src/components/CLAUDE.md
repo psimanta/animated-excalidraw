@@ -66,6 +66,13 @@ Drop zone + file picker + "Try the sample sketch" (fetches
   Space/arrows keeps focused buttons from double-triggering. Combos with
   ⌘/Ctrl are ignored (they're browser shortcuts, and F would otherwise
   fire on ⌘F).
+- Fullscreen is immersive: `is-immersive` (synced from `fullscreenchange`,
+  so native exits count) drops the stage margins and turns the control bar
+  into a fixed bottom overlay, revealed while the cursor is within 80px of
+  the bottom edge (`controls-peek` from a mousemove listener). The keyboard
+  reveal is CSS `:has(:focus-visible)` — NOT `:focus-within`, which would
+  pin the bar open after any mouse click on a control (the clicked button
+  keeps focus).
 - Laser pointer (`LaserPointer.tsx`): lit while ⌘/Ctrl is held. Keyup
   *and* window blur release it — ⌘Tab away swallows the Meta keyup. While
   lit, stage clicks don't advance and the stage cursor is hidden
